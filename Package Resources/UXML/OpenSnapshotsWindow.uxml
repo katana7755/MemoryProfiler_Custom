@@ -24,6 +24,7 @@ xsi:schemaLocation="
       </engine:VisualElement>
       <engine:VisualElement name="openSnapshotsWindowDiffSnapshotSpace">
         <engine:Button name="diffOpenSnapshots" text="Diff" tooltip="Show the difference between the left and right snapshot"/>
+        <engine:Button name="exportOpenSnapshots" text="Export" tooltip="Export two snapshots diff result as a csv file."/>
       </engine:VisualElement>
       <engine:VisualElement name="openSnapshotsWindowSecondSnapshotHolder" class="openSnapshotItemHolder">
 
