@@ -20,7 +20,6 @@ namespace Unity.MemoryProfiler.Editor
         public event Action ShowDiffOfOpenSnapshots = delegate {};
         public event Action ShowFirstOpenSnapshot = delegate {};
         public event Action ShowSecondOpenSnapshot = delegate {};
-        public event Action ExportDiffResultToCSV = delegate {};
 
         class OpenSnapshotItemUI
         {
@@ -37,7 +36,6 @@ namespace Unity.MemoryProfiler.Editor
         OpenSnapshotItemUI m_OpenSnapshotItemUIFirst = new OpenSnapshotItemUI();
         OpenSnapshotItemUI m_OpenSnapshotItemUISecond = new OpenSnapshotItemUI();
         Button m_DiffButton;
-        Button m_ExportButton;
 
         VisualElement m_FirstSnapshotHolder;
         VisualElement m_SecondSnapshotHolder;
@@ -70,9 +68,6 @@ namespace Unity.MemoryProfiler.Editor
             m_DiffButton = this.Q<Button>("diffOpenSnapshots");
             m_DiffButton.clickable.clicked += () => ShowDiffOfOpenSnapshots();
             m_DiffButton.SetEnabled(false);
-            m_ExportButton = this.Q<Button>("exportOpenSnapshots");
-            m_ExportButton.clickable.clicked += () => ExportDiffResultToCSV();
-            m_ExportButton.SetEnabled(false);
 
             var openSnapshotItemTree = AssetDatabase.LoadAssetAtPath(k_OpenSnapshotItemUxmlPath, typeof(VisualTreeAsset)) as VisualTreeAsset;
 
@@ -169,14 +164,7 @@ namespace Unity.MemoryProfiler.Editor
                     SetFocusSecond(false);
             }
 
-            var isDiffAvailable = firstIsOpen && secondIsOpen;
-            m_DiffButton.SetEnabled(isDiffAvailable);
-
-            if (!isDiffAvailable)
-            {
-                m_ExportButton.SetEnabled(false);
-            }
-            
+            m_DiffButton.SetEnabled(firstIsOpen && secondIsOpen);
 
             UpdateWidth(layout.width);
         }
@@ -362,13 +350,11 @@ namespace Unity.MemoryProfiler.Editor
             {
                 m_DiffButtonHolder.AddToClassList(k_SelectedSnapshotClassName);
                 m_DiffButton.AddToClassList(k_SelectedSnapshotClassName);
-                m_ExportButton.SetEnabled(true);
             }
             else
             {
                 m_DiffButtonHolder.RemoveFromClassList(k_SelectedSnapshotClassName);
                 m_DiffButton.RemoveFromClassList(k_SelectedSnapshotClassName);
-                m_ExportButton.SetEnabled(false);
             }
         }
     }
