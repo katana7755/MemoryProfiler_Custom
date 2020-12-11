@@ -83,6 +83,7 @@ namespace Unity.MemoryProfiler.Editor
             extraTable.Add(new ObjectAllManagedTable(this, formatter, m_Snapshot, crawledData, ObjectTable.ObjectMetaType.Managed));
             extraTable.Add(new ObjectAllNativeTable(this, formatter, m_Snapshot, crawledData, ObjectTable.ObjectMetaType.Native));
             extraTable.Add(new ObjectAllTable(this, formatter, m_Snapshot, crawledData, ObjectTable.ObjectMetaType.All));
+            extraTable.Add(new ObjectPossibleDuplicationTable(this, formatter, m_Snapshot, crawledData, ObjectTable.ObjectMetaType.All));
 
             m_ExtraTable = extraTable.ToArray();
             foreach (var t in m_ExtraTable)
