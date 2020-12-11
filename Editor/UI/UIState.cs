@@ -72,7 +72,7 @@ namespace Unity.MemoryProfiler.Editor.UI
                 m_Tables = copy.m_Tables;
             }
 
-            public abstract ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener);
+            public abstract ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener, UnityEngine.Experimental.UIElements.VisualElement toolbarExtension);
 
             public int GetTableIndex(Database.Table tab)
             {
@@ -235,7 +235,7 @@ namespace Unity.MemoryProfiler.Editor.UI
                 }
             }
 
-            public override ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener)
+            public override ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener, UnityEngine.Experimental.UIElements.VisualElement toolbarExtension)
             {
                 if (uiState.snapshotMode != null && uiState.snapshotMode.snapshot != null)
                     return new UI.TreeMapPane(uiState, viewPaneEventListener);
@@ -321,7 +321,7 @@ namespace Unity.MemoryProfiler.Editor.UI
                 UpdateTableSelectionNamesFromSchema(m_ObjectDataFormatter, m_SchemaDiff);
             }
 
-            public override ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener)
+            public override ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener, UnityEngine.Experimental.UIElements.VisualElement toolbarExtension)
             {
                 //TODO: delete this method once the default for diff is treemap
                 Database.Table table = null;
@@ -340,7 +340,7 @@ namespace Unity.MemoryProfiler.Editor.UI
                     UpdateTableSelectionNames();
                 }
 
-                var pane = new UI.SpreadsheetPane(uiState, viewPaneEventListener, null);
+                var pane = new UI.SpreadsheetPane(uiState, viewPaneEventListener, toolbarExtension);
                 pane.OpenTable(new Database.TableReference(table.GetName()), table);
                 return pane;
             }

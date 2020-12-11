@@ -408,7 +408,7 @@ namespace Unity.MemoryProfiler.Editor
             }
             if (UIState.CurrentMode != null && UIState.CurrentMode.CurrentViewPane == null)
             {
-                TransitPane(UIState.CurrentMode.GetDefaultView(UIState, this));
+                TransitPane(UIState.CurrentMode.GetDefaultView(UIState, this, m_ToolbarExtension));
             }
 
             RecreateMainView();
