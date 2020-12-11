@@ -238,7 +238,7 @@ namespace Unity.MemoryProfiler.Editor.UI
             public override ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener, UnityEngine.Experimental.UIElements.VisualElement toolbarExtension)
             {
                 if (uiState.snapshotMode != null && uiState.snapshotMode.snapshot != null)
-                    return new UI.TreeMapPane(uiState, viewPaneEventListener);
+                    return new UI.TreeMapPane(uiState, viewPaneEventListener, toolbarExtension);
                 else
                     return null;
             }

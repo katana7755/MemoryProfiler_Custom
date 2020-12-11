@@ -895,7 +895,7 @@ namespace Unity.MemoryProfiler.Editor
                     return;
                 }
             }
-            var pane = new UI.TreeMapPane(UIState, this);
+            var pane = new UI.TreeMapPane(UIState, this, m_ToolbarExtension);
             if (evt != null) pane.OpenHistoryEvent(evt);
             TransitPane(pane);
         }
