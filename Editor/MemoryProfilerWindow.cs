@@ -702,7 +702,7 @@ namespace Unity.MemoryProfiler.Editor
                 var tableRef = new Database.TableReference(tableLinkRequest.LinkToOpen.TableName, link.Parameters);
                 var table = mode.GetSchema().GetTableByReference(tableRef);
 
-                var pane = new UI.SpreadsheetPane(UIState, this);
+                var pane = new UI.SpreadsheetPane(UIState, this, m_ToolbarExtension);
                 if (pane.OpenLinkRequest(tableLinkRequest, tableRef, table))
                 {
                     UIState.TransitModeToOwningTable(table);
@@ -797,7 +797,7 @@ namespace Unity.MemoryProfiler.Editor
                     }
 
                     ProgressBarDisplay.UpdateProgress(0.75f, "Opening Table...");
-                    var pane = new UI.SpreadsheetPane(UIState, this);
+                    var pane = new UI.SpreadsheetPane(UIState, this, m_ToolbarExtension);
                     if (pane.OpenLinkRequest(tableLinkRequest, tableRef, table))
                     {
                         UIState.TransitModeToOwningTable(table);
@@ -816,7 +816,7 @@ namespace Unity.MemoryProfiler.Editor
         void OpenTable(Database.TableReference tableRef, Database.Table table)
         {
             UIState.TransitModeToOwningTable(table);
-            var pane = new UI.SpreadsheetPane(UIState, this);
+            var pane = new UI.SpreadsheetPane(UIState, this, m_ToolbarExtension);
             pane.OpenTable(tableRef, table);
             TransitPane(pane);
         }
@@ -824,7 +824,7 @@ namespace Unity.MemoryProfiler.Editor
         void OpenTable(Database.TableReference tableRef, Database.Table table, Database.CellPosition pos)
         {
             UIState.TransitModeToOwningTable(table);
-            var pane = new UI.SpreadsheetPane(UIState, this);
+            var pane = new UI.SpreadsheetPane(UIState, this, m_ToolbarExtension);
             pane.OpenTable(tableRef, table, pos);
             TransitPane(pane);
         }
@@ -855,7 +855,7 @@ namespace Unity.MemoryProfiler.Editor
 
         void OpenTable(UI.HistoryEvent history)
         {
-            var pane = new UI.SpreadsheetPane(UIState, this);
+            var pane = new UI.SpreadsheetPane(UIState, this, m_ToolbarExtension);
 
             if (history != null)
                 pane.OpenHistoryEvent(history as SpreadsheetPane.History);
