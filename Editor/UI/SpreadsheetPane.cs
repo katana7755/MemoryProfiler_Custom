@@ -582,6 +582,7 @@ namespace Unity.MemoryProfiler.Editor.UI
                         }
 
                         var str = columns[col].GetRowValueString(row, formatters[col]);
+                        str = str.Replace("\"", "\'");
 
                         if (str.Contains(",") || str.Contains("\n"))
                         {
