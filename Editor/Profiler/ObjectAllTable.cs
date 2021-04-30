@@ -312,7 +312,7 @@ namespace Unity.MemoryProfiler.Editor
                         return Snapshot.nativeObjects.objectName[moi.NativeObjectIndex];
                     return string.Empty;
                 case ObjectDataType.NativeObject:
-                case ObjectDataType.NativeObjectReference:
+                //case ObjectDataType.NativeObjectReference:
                     return Snapshot.nativeObjects.objectName[objectData.nativeObjectIndex];
                 case ObjectDataType.Global:
                 case ObjectDataType.Type:
@@ -381,8 +381,8 @@ namespace Unity.MemoryProfiler.Editor
                     return Snapshot.typeDescriptions.size[obj.managedTypeIndex];
                 case ObjectDataType.NativeObject:
                     return (long)Snapshot.nativeObjects.size[obj.nativeObjectIndex];
-                case ObjectDataType.NativeObjectReference:
-                    return 0;
+                //case ObjectDataType.NativeObjectReference:
+                //    return 0;
                 default:
                     return 0;
             }
@@ -406,8 +406,8 @@ namespace Unity.MemoryProfiler.Editor
                 }
                 case ObjectDataType.NativeObject:
                     return 0;
-                case ObjectDataType.NativeObjectReference:
-                    return (long)Snapshot.nativeObjects.size[obj.nativeObjectIndex];
+                //case ObjectDataType.NativeObjectReference:
+                //    return (long)Snapshot.nativeObjects.size[obj.nativeObjectIndex];
                 default:
                     return 0;
             }
