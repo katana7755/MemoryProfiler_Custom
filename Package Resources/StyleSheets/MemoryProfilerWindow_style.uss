@@ -79,6 +79,21 @@ ScrollView#snapshotListSidebar {
     flex:1;
 }
 
+.toolbarFlexSpacer0Px
+{
+    max-width:0px;
+}
+
+#captureAndFlagsDropdownMenuPlaceholder{
+    flex-shrink:1;
+    flex-grow:1;
+}
+
+#captureAndFlagsDropdownMenu
+{
+   min-height: 18px;
+}
+
 Label.guidanceText{
     white-space: normal;
     flex-grow: 1;
