@@ -21,6 +21,12 @@ namespace Unity.MemoryProfiler.Editor.UI
 
         CodeType m_CurrentCodeType = CodeType.Unknown;
 
+        long m_TotalBytes = 0L;
+
+        VisualElement m_ToolbarExtension;
+        IMGUIContainer m_ToolbarExtensionPane;
+        UIState.BaseMode m_ToolbarExtensionMode;
+
         internal class History : HistoryEvent
         {
             string m_GroupName;
@@ -173,7 +179,7 @@ namespace Unity.MemoryProfiler.Editor.UI
             }
         }
 
-        public TreeMapPane(UIState s, IViewPaneEventListener l)
+        public TreeMapPane(UIState s, IViewPaneEventListener l, VisualElement toolbarExtension)
             : base(s, l)
         {
             m_TreeMap = new UI.Treemap.TreeMapView(s.snapshotMode.snapshot);
@@ -183,6 +189,16 @@ namespace Unity.MemoryProfiler.Editor.UI
             m_TreeMap.OnOpenItem = OnOpenItem;
 
             ShowAllObjects(default(Treemap.ObjectMetric), false);
+            CalculateTotalBytes();
+
+            m_ToolbarExtension = toolbarExtension;
+
+            if (m_ToolbarExtension != null)
+            {
+                m_ToolbarExtensionPane = new IMGUIContainer(new Action(OnGUIToolbarExtension));
+                s.CurrentMode.ViewPaneChanged += OnViewPaneChanged;
+                s.ModeChanged += OnModeChanged;
+            }
         }
 
         public void ShowAllObjects(Treemap.ObjectMetric itemCopyToSelect, bool focus)
@@ -564,6 +580,62 @@ namespace Unity.MemoryProfiler.Editor.UI
             m_TreeMap.CleanupMeshes();
             m_TreeMap = null;
             m_Spreadsheet = null;
+        }
+
+        private void CalculateTotalBytes()
+        {
+            m_TotalBytes = 0L;
+
+            for (var i = 0; i < m_UIState.snapshotMode.snapshot.CrawledData.ManagedObjects.Count; ++i)
+            {
+                m_TotalBytes += m_UIState.snapshotMode.snapshot.CrawledData.ManagedObjects[i].Size;
+            }
+
+            for (var i = 0; i < m_UIState.snapshotMode.snapshot.nativeObjects.Count; ++i)
+            {
+                m_TotalBytes += (long)m_UIState.snapshotMode.snapshot.nativeObjects.size[i];
+            }
+        }
+
+        private void OnModeChanged(UIState.BaseMode newMode, UIState.ViewMode newViewMode)
+        {
+            if (m_ToolbarExtensionMode != null)
+            {
+                m_ToolbarExtensionMode.ViewPaneChanged -= OnViewPaneChanged;
+                m_ToolbarExtensionMode = null;
+            }
+
+            if (newMode != null)
+            {
+                newMode.ViewPaneChanged += OnViewPaneChanged;
+                m_ToolbarExtensionMode = newMode;
+            }
+
+            OnViewPaneChanged(newMode.CurrentViewPane);
+        }
+
+        private void OnViewPaneChanged(ViewPane newPane)
+        {
+            if (m_ToolbarExtension.IndexOf(m_ToolbarExtensionPane) != -1)
+            {
+                m_ToolbarExtension.Remove(m_ToolbarExtensionPane);
+            }
+
+            if (newPane == this)
+            {
+                m_ToolbarExtension.Add(m_ToolbarExtensionPane);
+            }
+        }
+
+        private void OnGUIToolbarExtension()
+        {
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+
+            var guiContent = new GUIContent("Total : " + EditorUtility.FormatBytes(m_TotalBytes));
+            var popupRect = GUILayoutUtility.GetRect(guiContent, EditorStyles.toolbarPopup);
+
+            EditorGUI.LabelField(popupRect, guiContent, EditorStyles.toolbarPopup);
+            EditorGUILayout.EndHorizontal();
         }
     }
 }

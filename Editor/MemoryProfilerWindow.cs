@@ -418,7 +418,7 @@ namespace Unity.MemoryProfiler.Editor
             }
             if (UIState.CurrentMode != null && UIState.CurrentMode.CurrentViewPane == null)
             {
-                TransitPane(UIState.CurrentMode.GetDefaultView(UIState, this));
+                TransitPane(UIState.CurrentMode.GetDefaultView(UIState, this, m_ToolbarExtension));
             }
 
             RecreateMainView();
@@ -911,7 +911,7 @@ namespace Unity.MemoryProfiler.Editor
                     return;
                 }
             }
-            var pane = new UI.TreeMapPane(UIState, this);
+            var pane = new UI.TreeMapPane(UIState, this, m_ToolbarExtension);
             if (evt != null) pane.OpenHistoryEvent(evt);
             TransitPane(pane);
         }

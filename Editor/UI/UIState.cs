@@ -72,7 +72,7 @@ namespace Unity.MemoryProfiler.Editor.UI
                 m_Tables = copy.m_Tables;
             }
 
-            public abstract ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener);
+            public abstract ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener, UnityEngine.Experimental.UIElements.VisualElement toolbarExtension);
 
             public int GetTableIndex(Database.Table tab)
             {
@@ -234,14 +234,12 @@ namespace Unity.MemoryProfiler.Editor.UI
                 }
             }
 
-            public override ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener)
+            public override ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener, UnityEngine.UIElements.VisualElement toolbarExtension)
             {
                 if (uiState.snapshotMode != null && uiState.snapshotMode.snapshot != null)
-                {
-                    return new TreeMapPane(uiState, viewPaneEventListener);
-                }
-
-                return null;
+                    return new TreeMapPane(uiState, viewPaneEventListener, toolbarExtension);
+                else
+                    return null;
             }
 
             public override void Clear()
@@ -324,7 +322,7 @@ namespace Unity.MemoryProfiler.Editor.UI
                 UpdateTableSelectionNamesFromSchema(m_ObjectDataFormatter, m_SchemaDiff);
             }
 
-            public override ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener)
+            public override ViewPane GetDefaultView(UIState uiState, IViewPaneEventListener viewPaneEventListener, UnityEngine.Experimental.UIElements.VisualElement toolbarExtension)
             {
                 //TODO: delete this method once the default for diff is treemap
                 Database.Table table = null;
