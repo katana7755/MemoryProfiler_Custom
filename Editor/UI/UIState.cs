@@ -341,7 +341,7 @@ namespace Unity.MemoryProfiler.Editor.UI
                     UpdateTableSelectionNames();
                 }
 
-                var pane = new UI.SpreadsheetPane(uiState, viewPaneEventListener);
+                var pane = new UI.SpreadsheetPane(uiState, viewPaneEventListener, toolbarExtension);
                 pane.OpenTable(new Database.TableReference(table.GetName()), table);
                 return pane;
             }

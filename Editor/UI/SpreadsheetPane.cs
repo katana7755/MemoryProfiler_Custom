@@ -5,6 +5,11 @@ namespace Unity.MemoryProfiler.Editor.UI
 {
     internal class SpreadsheetPane : ViewPane
     {
+        static class Content
+        {
+            public static readonly GUIContent ExportLabel = new GUIContent("Export Table");
+        }
+
         public string TableDisplayName
         {
             get
@@ -19,6 +24,10 @@ namespace Unity.MemoryProfiler.Editor.UI
         public int CurrentTableIndex { get; private set; }
 
         protected bool m_NeedRefresh = false;
+
+        UnityEngine.Experimental.UIElements.VisualElement m_ToolbarExtension;
+        UnityEngine.Experimental.UIElements.IMGUIContainer m_ToolbarExtensionPane;
+        UIState.BaseMode m_ToolbarExtensionMode;
 
         internal class History : HistoryEvent
         {
@@ -84,9 +93,17 @@ namespace Unity.MemoryProfiler.Editor.UI
             }
         }
 
-        public SpreadsheetPane(UIState s, IViewPaneEventListener l)
+        public SpreadsheetPane(UIState s, IViewPaneEventListener l, UnityEngine.Experimental.UIElements.VisualElement toolbarExtension)
             : base(s, l)
         {
+            m_ToolbarExtension = toolbarExtension;
+
+            if (m_ToolbarExtension != null)
+            {
+                m_ToolbarExtensionPane = new UnityEngine.Experimental.UIElements.IMGUIContainer(new System.Action(OnGUIToolbarExtension));
+                s.CurrentMode.ViewPaneChanged += OnViewPaneChanged;
+                s.ModeChanged += OnModeChanged;
+            }
         }
 
         protected void CloseCurrentTable()
@@ -265,6 +282,340 @@ namespace Unity.MemoryProfiler.Editor.UI
             MemoryProfilerAnalytics.SendPendingFilterChanges();
             CloseCurrentTable();
             m_Spreadsheet = null;
+
+            if (m_ToolbarExtensionMode != null)
+                m_ToolbarExtensionMode.ViewPaneChanged -= OnViewPaneChanged;
+
+            m_ToolbarExtensionMode = null;
+        }
+
+        private void OnModeChanged(UIState.BaseMode newMode, UIState.ViewMode newViewMode)
+        {
+            if (m_ToolbarExtension == null)
+            {
+                return;
+            }
+
+            if (m_ToolbarExtensionMode != null)
+            {
+                m_ToolbarExtensionMode.ViewPaneChanged -= OnViewPaneChanged;
+                m_ToolbarExtensionMode = null;
+            }
+
+            if (newMode != null)
+            {
+                newMode.ViewPaneChanged += OnViewPaneChanged;
+                m_ToolbarExtensionMode = newMode;
+            }
+
+            OnViewPaneChanged(newMode.CurrentViewPane);
+        }
+
+        private void OnViewPaneChanged(ViewPane newPane)
+        {
+            if (m_ToolbarExtension == null)
+            {
+                return;
+            }
+
+            if (m_ToolbarExtension.IndexOf(m_ToolbarExtensionPane) != -1)
+            {
+                m_ToolbarExtension.Remove(m_ToolbarExtensionPane);
+            }
+
+            if (newPane == this)
+            {
+                m_ToolbarExtension.Add(m_ToolbarExtensionPane);
+            }
+        }
+
+        private void OnGUIToolbarExtension()
+        {
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+
+            var popupRect = GUILayoutUtility.GetRect(Content.ExportLabel, EditorStyles.toolbarPopup);
+
+            if (EditorGUI.DropdownButton(popupRect, Content.ExportLabel, FocusType.Passive, EditorStyles.toolbarButton))
+            {
+                ExportTableToCSV();
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void ExportTableToCSV()
+        {
+            // Export Table To CSV File...      
+            var filePath = UnityEditor.EditorUtility.SaveFilePanel("Save current memory table to a csv file", "", "MemorySnapshot.csv", "csv");
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                return;
+            }
+
+            var table = m_Spreadsheet.DisplayTable;
+            var header = string.Empty;
+
+            // Export Header
+            var columnCount = table.GetMetaData().GetColumnCount();
+            var metaColumns = new Database.MetaColumn[columnCount];
+            var columns = new Database.Column[columnCount];
+            var formatters = new Database.IDataFormatter[columnCount];
+
+            for (var col = 0; col < columnCount; ++col)
+            {
+                if (col != 0)
+                {
+                    header += ",";
+                }
+
+                metaColumns[col] = table.GetMetaData().GetColumnByIndex(col);
+                columns[col] = table.GetColumnByIndex(col);
+                formatters[col] = m_UIState.FormattingOptions.GetFormatter(metaColumns[col].FormatName);
+
+                if (formatters[col] is Database.SizeDataFormatter)
+                {
+                    formatters[col] = Database.DefaultDataFormatter.Instance;
+                }
+
+                header += table.GetMetaColumnByColumn(columns[col]).DisplayName;
+            }
+
+            header += "\n";
+
+            // Export Rows by using threads...
+            var rowCount = table.GetRowCount();
+            var batchCount = 100; // If you set this value to rowCount, then you can get a single csv file. However it will take enormous amount of time...might be more than 1 hour in empty scene...
+            s_ExportProgressCurrent = 0L;
+            s_ExportProgressTotal = rowCount;
+            ProgressBarDisplay.ShowBar("Exporting all snapshot result...");
+
+            for (var row = 0; row < rowCount; row += batchCount)
+            {
+                var newItem = new ExportWorkItem();
+                newItem.header = (row == 0) ? header : string.Empty;
+                newItem.startRow = row;
+                newItem.endRow = (long)Mathf.Min(row + batchCount, rowCount);
+                newItem.rowCount = rowCount;
+                newItem.columnCount = columnCount;
+                newItem.metaColumns = metaColumns;
+                newItem.columns = columns;
+                newItem.formatters = formatters;
+                s_ExportWorkItemQueue.Enqueue(newItem);
+            }
+
+            // if (s_SamplerExportString == null)
+            // {
+            //     s_SamplerExportString = UnityEngine.Profiling.CustomSampler.Create("Export String");
+            // }
+
+            // if (s_SamplerExportFile == null)
+            // {
+            //     s_SamplerExportFile = UnityEngine.Profiling.CustomSampler.Create("Export File");
+            // }
+
+            var threadCount = SystemInfo.processorCount - 3; // Three for main thread, render thread, and file writer...
+
+            for (var i = 0; i < threadCount; ++i)
+            {
+                new System.Threading.Thread(ThreadProc_ExportOutputStringWorker).Start();
+            }
+
+            new System.Threading.Thread(ThreadProc_ExportToFileWorker).Start(filePath);
+
+            // Wait until all tasks are done
+            // Make the main thread work for the tasks...
+            ExportWorkItem workItem = null;
+
+            while (s_ExportProgressCurrent < s_ExportProgressTotal)
+            {
+                ProgressBarDisplay.UpdateProgress(((float)s_ExportProgressCurrent / (float)s_ExportProgressTotal), $"Exporting all diff result...({s_ExportProgressCurrent}/{s_ExportProgressTotal})");
+                System.Threading.Thread.Sleep(0);
+
+                lock (s_ExportWorkItemQueue)
+                {
+                    if (s_ExportWorkItemQueue.Count > 0)
+                    {
+                        workItem = s_ExportWorkItemQueue.Dequeue();
+                    }
+                    else
+                    {
+                        workItem = null;
+                    }
+                }
+
+                if (workItem == null)
+                {
+                    break;
+                }
+
+                workItem.GenerateOutputString();
+
+                lock (s_ExportToFileItemList)
+                {
+                    var index = s_ExportToFileItemList.FindIndex(a => a.startRow > workItem.startRow);
+
+                    if (index < 0)
+                    {
+                        s_ExportToFileItemList.Add(workItem);
+                    }
+                    else
+                    {
+                        s_ExportToFileItemList.Insert(index, workItem);
+                    }
+                }
+            }
+
+            ProgressBarDisplay.ClearBar();
+        }
+
+        private static void ThreadProc_ExportOutputStringWorker()
+        {
+            // UnityEngine.Profiling.Profiler.BeginThreadProfiling("ExportOutputStringWorker", "ExportOutputStringWorker");
+            ExportWorkItem workItem = null;
+
+            while (true)
+            {
+                // s_SamplerExportString.Begin();
+                lock (s_ExportWorkItemQueue)
+                {
+                    if (s_ExportWorkItemQueue.Count > 0)
+                    {
+                        workItem = s_ExportWorkItemQueue.Dequeue();
+                    }
+                    else
+                    {
+                        workItem = null;
+                    }
+                }
+
+                if (workItem == null)
+                {
+                    // s_SamplerExportString.End();
+                    break;
+                }
+
+                workItem.GenerateOutputString();
+
+                lock (s_ExportToFileItemList)
+                {
+                    var index = s_ExportToFileItemList.FindIndex(a => a.startRow > workItem.startRow);
+
+                    if (index < 0)
+                    {
+                        s_ExportToFileItemList.Add(workItem);
+                    }
+                    else
+                    {
+                        s_ExportToFileItemList.Insert(index, workItem);
+                    }
+                }
+
+                // s_SamplerExportString.End();
+                System.Threading.Thread.Sleep(0);
+            }
+            // UnityEngine.Profiling.Profiler.EndThreadProfiling();
+        }
+
+        private static void ThreadProc_ExportToFileWorker(object obj)
+        {
+            // UnityEngine.Profiling.Profiler.BeginThreadProfiling("ExportToFileWorker", "ExportToFileWorker");
+            string filePath = (string)obj;
+            ExportWorkItem workItem = null;
+
+            using (System.IO.StreamWriter outputFile = new System.IO.StreamWriter(filePath, false, System.Text.Encoding.UTF8))
+            {
+                while (true)
+                {
+                    // s_SamplerExportFile.Begin();
+                    lock (s_ExportToFileItemList)
+                    {
+                        if (s_ExportToFileItemList.Count > 0 && s_ExportToFileItemList[0].startRow == s_ExportProgressCurrent)
+                        {
+                            workItem = s_ExportToFileItemList[0];
+                            s_ExportToFileItemList.RemoveAt(0);
+                        }
+                        else
+                        {
+                            workItem = null;
+                        }
+                    }
+
+                    if (workItem == null)
+                    {
+                        // s_SamplerExportFile.End();
+                        System.Threading.Thread.Sleep(10);
+                        continue;
+                    }
+
+                    outputFile.Write(workItem.outputString);
+
+                    s_ExportProgressCurrent += (workItem.endRow - workItem.startRow);
+
+                    if (s_ExportProgressCurrent >= s_ExportProgressTotal)
+                    {
+                        break;
+                    }
+
+                    // s_SamplerExportFile.End();
+                    System.Threading.Thread.Sleep(0);
+                }
+            }
+            // UnityEngine.Profiling.Profiler.EndThreadProfiling();
+        }
+
+        private static System.Collections.Generic.Queue<ExportWorkItem> s_ExportWorkItemQueue = new System.Collections.Generic.Queue<ExportWorkItem>();
+        private static System.Collections.Generic.List<ExportWorkItem> s_ExportToFileItemList = new System.Collections.Generic.List<ExportWorkItem>();
+        private static long s_ExportProgressCurrent = 0L;
+        private static long s_ExportProgressTotal = 0L;
+
+        private class ExportWorkItem
+        {
+            public string header;
+            public long startRow;
+            public long endRow;
+            public long rowCount;
+            public int columnCount;
+            public Database.MetaColumn[] metaColumns;
+            public Database.Column[] columns;
+            public Database.IDataFormatter[] formatters;
+
+            public string outputString;
+
+            public void GenerateOutputString()
+            {
+                outputString = header;
+
+                for (var row = startRow; row < endRow; ++row)
+                {
+                    for (var col = 0; col < columnCount; ++col)
+                    {
+                        if (col != 0)
+                        {
+                            outputString += ",";
+                        }
+
+                        var str = columns[col].GetRowValueString(row, formatters[col]);
+                        str = str.Replace("\"", "\'");
+
+                        if (str.Contains(",") || str.Contains("\n"))
+                        {
+                            outputString += $"\"{str}\"";
+                        }
+                        else
+                        {
+                            outputString += str;
+                        }
+                    }
+
+                    outputString += "\n";
+
+                    if ((row - startRow + 1) % 10 == 0)
+                    {
+                        System.Threading.Thread.Sleep(0);
+                    }
+                }
+            }
         }
     }
 }
