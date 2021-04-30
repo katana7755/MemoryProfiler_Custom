@@ -619,10 +619,15 @@ namespace Unity.MemoryProfiler.Editor
             allObjects.NoDataMessage = "No Managed or Native Objects because they were not captured in this snapshot. Select the Managed and Native Objects options in the drop-down of the Capture button or via CaptureFlags when using the API to take a capture.";
             m_TablesByName.Add(allObjects.GetName(), allObjects);
 
-            m_ExtraTable = new Table[3];
+            var allPotentialDuplications = new ObjectPossibleDuplicationTable(this, formatter, m_Snapshot, crawledData, ObjectTable.ObjectMetaType.All);
+            allPotentialDuplications.NoDataMessage = "No Managed or Native Objects because they were not captured in this snapshot. Select the Managed and Native Objects options in the drop-down of the Capture button or via CaptureFlags when using the API to take a capture.";
+            m_TablesByName.Add(allPotentialDuplications.GetName(), allPotentialDuplications);
+
+            m_ExtraTable = new Table[4];
             m_ExtraTable[0] = allManaged;
             m_ExtraTable[1] = allNative;
             m_ExtraTable[2] = allObjects;
+            m_ExtraTable[3] = allPotentialDuplications;
         }
 
         private void AddTable(APITable t, List<APITable> tables)
