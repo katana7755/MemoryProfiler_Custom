@@ -25,8 +25,8 @@ namespace Unity.MemoryProfiler.Editor.UI
 
         protected bool m_NeedRefresh = false;
 
-        UnityEngine.Experimental.UIElements.VisualElement m_ToolbarExtension;
-        UnityEngine.Experimental.UIElements.IMGUIContainer m_ToolbarExtensionPane;
+        UnityEngine.UIElements.VisualElement m_ToolbarExtension;
+        UnityEngine.UIElements.IMGUIContainer m_ToolbarExtensionPane;
         UIState.BaseMode m_ToolbarExtensionMode;
 
         internal class History : HistoryEvent
@@ -93,14 +93,14 @@ namespace Unity.MemoryProfiler.Editor.UI
             }
         }
 
-        public SpreadsheetPane(UIState s, IViewPaneEventListener l, UnityEngine.Experimental.UIElements.VisualElement toolbarExtension)
+        public SpreadsheetPane(UIState s, IViewPaneEventListener l, UnityEngine.UIElements.VisualElement toolbarExtension)
             : base(s, l)
         {
             m_ToolbarExtension = toolbarExtension;
 
             if (m_ToolbarExtension != null)
             {
-                m_ToolbarExtensionPane = new UnityEngine.Experimental.UIElements.IMGUIContainer(new System.Action(OnGUIToolbarExtension));
+                m_ToolbarExtensionPane = new UnityEngine.UIElements.IMGUIContainer(new System.Action(OnGUIToolbarExtension));
                 s.CurrentMode.ViewPaneChanged += OnViewPaneChanged;
                 s.ModeChanged += OnModeChanged;
             }
